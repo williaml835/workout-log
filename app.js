@@ -1,44 +1,47 @@
 const appRoot = document.getElementById("app");
-const bundleChunks = [0, 1, 2, 3];
+const bundleChunks = [0, 1, 2, 3, 4];
 
 async function loadText(path) {
-  const response = await fetch(`${path}?v=12`, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`Unable to load ${path} (${response.status})`);
-  }
-  return (await response.text()).trim();
+  const response = await fetch(`${path}?v=13`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Unable to load ${path}`);
+  return response.text();
 }
 
-async function loadWorkoutLog() {
+async function inflateGzipBase64(value) {
   if (!("DecompressionStream" in window)) {
-    throw new Error("This browser is too old to open this app. Update your browser and try again.");
+    throw new Error("This browser is too old to load the compressed app bundle.");
   }
-
-  const encoded = (await Promise.all(
-    bundleChunks.map((chunk) => loadText(`./app.bundle.${chunk}.txt`)),
-  )).join("");
-  const compressed = Uint8Array.from(atob(encoded), (char) => char.charCodeAt(0));
-  const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream("gzip"));
-  const source = await new Response(stream).text();
-  const moduleUrl = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
-
-  try {
-    await import(moduleUrl);
-  } finally {
-    URL.revokeObjectURL(moduleUrl);
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
   }
+  const stream = new Blob([bytes], { type: "application/gzip" })
+    .stream()
+    .pipeThrough(new DecompressionStream("gzip"));
+  return new Response(stream).text();
 }
 
-loadWorkoutLog().catch((error) => {
-  console.error(error);
-  if (appRoot) {
+async function boot() {
+  try {
+    const encoded = (await Promise.all(
+      bundleChunks.map((index) => loadText(`./app.bundle.${index}.txt`)),
+    )).join("");
+    const source = await inflateGzipBase64(encoded);
+    const url = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+    await import(url);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error(error);
     appRoot.innerHTML = `
       <main class="auth-layout">
         <section class="auth-card">
           <h1>Workout Log could not load.</h1>
-          <p>${String(error.message || error)}</p>
+          <p class="error">${error.message || "Refresh the page and try again."}</p>
         </section>
       </main>
     `;
   }
-});
+}
+
+boot();
