@@ -1,7 +1,7 @@
 const appRoot = document.getElementById("app");
 
 async function loadText(path) {
-  const response = await fetch(`${path}?v=13`, { cache: "no-store" });
+  const response = await fetch(`${path}?v=14`, { cache: "no-store" });
   if (!response.ok) throw new Error(`Unable to load ${path}`);
   return response.text();
 }
