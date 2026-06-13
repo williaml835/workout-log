@@ -9,10 +9,15 @@
       window.__WORKOUT_LOG_ROUTER__ = "hash";
     </script>
     <meta name="description" content="Log workouts, sets, weights, reps, completion, and progress over time with Supabase-backed persistence." />
+    <script>
+      if (window.location.protocol === "file:") {
+        window.location.replace("./#/?v=13");
+      }
+    </script>
     <link rel="icon" href="./brand-mark.svg" />
     <link rel="stylesheet" href="./styles.css" />
     <script src="./env.js"></script>
-    <script type="module" src="./app.js?v=12"></script>
+    <script type="module" src="./app.js?v=13"></script>
   </head>
   <body>
     <div id="app">
