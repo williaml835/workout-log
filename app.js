@@ -1,5 +1,4 @@
 const appRoot = document.getElementById("app");
-const bundleChunks = [0, 1, 2, 3, 4];
 
 async function loadText(path) {
   const response = await fetch(`${path}?v=13`, { cache: "no-store" });
@@ -11,7 +10,7 @@ async function inflateGzipBase64(value) {
   if (!("DecompressionStream" in window)) {
     throw new Error("This browser is too old to load the compressed app bundle.");
   }
-  const binary = atob(value);
+  const binary = atob(value.trim());
   const bytes = new Uint8Array(binary.length);
   for (let index = 0; index < binary.length; index += 1) {
     bytes[index] = binary.charCodeAt(index);
@@ -24,9 +23,7 @@ async function inflateGzipBase64(value) {
 
 async function boot() {
   try {
-    const encoded = (await Promise.all(
-      bundleChunks.map((index) => loadText(`./app.bundle.${index}.txt`)),
-    )).join("");
+    const encoded = await loadText("./app.bundle.txt");
     const source = await inflateGzipBase64(encoded);
     const url = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
     await import(url);
